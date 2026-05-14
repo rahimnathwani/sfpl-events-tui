@@ -1,7 +1,6 @@
 package scraper
 
 import (
-	"sort"
 	"testing"
 	"time"
 
@@ -23,10 +22,9 @@ func TestGroupInstances_deduplicatesAndGroups(t *testing.T) {
 	if len(groups) != 2 {
 		t.Fatalf("expected 2 groups, got %d", len(groups))
 	}
-	// Must be sorted alphabetically
-	names := []string{groups[0].Name, groups[1].Name}
-	if !sort.StringsAreSorted(names) {
-		t.Errorf("groups not sorted: %v", names)
+	// Must be sorted by next date ascending (Chess Club +24h before Anza Book Club +72h)
+	if groups[0].Name != "Chess Club" || groups[1].Name != "Anza Book Club" {
+		t.Errorf("groups not sorted by next date: got %v, %v", groups[0].Name, groups[1].Name)
 	}
 	// Find Chess Club
 	var chess model.EventGroup

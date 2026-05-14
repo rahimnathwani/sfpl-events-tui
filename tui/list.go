@@ -142,7 +142,7 @@ func (m ListModel) View() string {
 		visH = 1
 	}
 
-	nameWidth := m.width - 16
+	nameWidth := m.width - 20
 	if nameWidth < 10 {
 		nameWidth = 10
 	}
@@ -166,7 +166,7 @@ func (m ListModel) View() string {
 
 		dateStr := ""
 		if !g.NextDate().IsZero() {
-			dateStr = g.NextDate().Format("Jan 2")
+			dateStr = g.NextDate().Format("Jan 2 3:04pm")
 		}
 
 		line := fmt.Sprintf("%s %-*s  %s", c, nameWidth, name, dateStr)

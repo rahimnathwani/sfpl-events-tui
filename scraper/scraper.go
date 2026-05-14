@@ -140,7 +140,11 @@ func GroupInstances(instances []model.EventInstance, archived map[string]bool) [
 	}
 
 	sort.Slice(groups, func(i, j int) bool {
-		return groups[i].Name < groups[j].Name
+		di, dj := groups[i].NextDate(), groups[j].NextDate()
+		if di.Equal(dj) {
+			return groups[i].Name < groups[j].Name
+		}
+		return di.Before(dj)
 	})
 
 	return groups
