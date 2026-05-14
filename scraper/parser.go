@@ -15,8 +15,8 @@ import (
 const baseURL = "https://sfpl.org"
 
 type ajaxCommand struct {
-	Command string `json:"command"`
-	Data    string `json:"data"`
+	Command string          `json:"command"`
+	Data    json.RawMessage `json:"data"`
 }
 
 // ParseResponse parses a Drupal AJAX JSON response body and returns all event
@@ -28,7 +28,11 @@ func ParseResponse(body []byte) ([]model.EventInstance, error) {
 	}
 	for _, cmd := range commands {
 		if cmd.Command == "insert" {
-			return parseHTML(cmd.Data)
+			var htmlStr string
+			if err := json.Unmarshal(cmd.Data, &htmlStr); err != nil {
+				continue
+			}
+			return parseHTML(htmlStr)
 		}
 	}
 	return nil, nil
