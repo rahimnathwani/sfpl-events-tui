@@ -24,13 +24,7 @@ func (g EventGroup) NextDate() time.Time {
 	if len(g.Instances) == 0 {
 		return time.Time{}
 	}
-	earliest := g.Instances[0].Date
-	for _, inst := range g.Instances[1:] {
-		if inst.Date.Before(earliest) {
-			earliest = inst.Date
-		}
-	}
-	return earliest
+	return g.Instances[0].Date
 }
 
 func SortInstances(instances []EventInstance) {
