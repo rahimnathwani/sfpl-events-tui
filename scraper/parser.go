@@ -46,7 +46,7 @@ func ParseDescription(r io.Reader) string {
 		return ""
 	}
 	node := findNode(doc, func(n *html.Node) bool {
-		return n.Type == html.ElementNode && n.Data == "div" && hasClass(n, "field--name-body")
+		return n.Type == html.ElementNode && n.Data == "div" && hasClass(n, "event__content")
 	})
 	if node == nil {
 		return ""

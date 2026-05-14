@@ -70,7 +70,7 @@ func TestParseDateRange_parsesStartAndEnd(t *testing.T) {
 
 func TestParseDescription_extractsBodyText(t *testing.T) {
 	html := `<html><body>
-		<div class="field field--name-body field__item"><p>Join us for chess!</p></div>
+		<div class="event__content clearfix"><p>Join us for chess!</p></div>
 	</body></html>`
 	got := ParseDescription(strings.NewReader(html))
 	if !strings.Contains(got, "Join us for chess!") {
