@@ -25,6 +25,11 @@ func main() {
 	model := tui.NewAppModel(archived)
 	p := tea.NewProgram(model, tea.WithAltScreen())
 
+	archivedSnapshot := make(map[string]bool, len(archived))
+	for k, v := range archived {
+		archivedSnapshot[k] = v
+	}
+
 	go func() {
 		instances, err := scraper.Scrape(*months, func(completed, total int) {
 			p.Send(tui.ProgressMsg{Completed: completed, Total: total})
@@ -33,7 +38,7 @@ func main() {
 			p.Send(tui.ScrapeErrMsg{Err: err})
 			return
 		}
-		groups := scraper.GroupInstances(instances, archived)
+		groups := scraper.GroupInstances(instances, archivedSnapshot)
 		p.Send(tui.ScrapeCompleteMsg{Groups: groups})
 	}()
 

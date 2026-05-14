@@ -22,6 +22,8 @@ type AppModel struct {
 	loading  LoadingModel
 	list     ListModel
 	detail   DetailModel
+	width    int
+	height   int
 }
 
 func NewAppModel(archived map[string]bool) AppModel {
@@ -42,6 +44,15 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.list.width = msg.Width
+		m.list.height = msg.Height
+		m.detail.width = msg.Width
+		m.detail.height = msg.Height
+		return m, nil
+
 	case ProgressMsg:
 		m.loading.Completed = msg.Completed
 		m.loading.Total = msg.Total
@@ -49,6 +60,8 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case ScrapeCompleteMsg:
 		m.list = NewListModel(msg.Groups, m.archived)
+		m.list.width = m.width
+		m.list.height = m.height
 		m.screen = screenList
 		return m, nil
 
@@ -58,6 +71,8 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case NavigateToDetailMsg:
 		m.detail = NewDetailModel(msg.Group)
+		m.detail.width = m.width
+		m.detail.height = m.height
 		m.screen = screenDetail
 		var cmd tea.Cmd
 		if len(msg.Group.Instances) > 0 && msg.Group.Instances[0].Description == nil {
