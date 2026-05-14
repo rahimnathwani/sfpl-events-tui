@@ -75,7 +75,7 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.archived[msg.Name] = true
 		}
-		store.Save(m.archived) // synchronous; file is tiny
+		_ = store.Save(m.archived) // best-effort; errors don't affect in-memory state
 		m.list.archived = m.archived
 		for i, g := range m.list.groups {
 			if g.Name == msg.Name {
