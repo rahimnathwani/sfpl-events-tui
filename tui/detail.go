@@ -4,8 +4,10 @@ package tui
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"os/exec"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -21,13 +23,23 @@ var (
 	descStyle         = lipgloss.NewStyle().Padding(0, 2)
 )
 
+const (
+	modalOptOpenWeb = 0
+	modalOptGCal    = 1
+	modalOptCount   = 2
+)
+
+var modalOptions = [modalOptCount]string{"Open web page", "Add to Google Calendar"}
+
 // DetailModel shows the list of instances for one event group and lazily loads
 // the description for the selected instance.
 type DetailModel struct {
-	group  model.EventGroup
-	cursor int
-	width  int
-	height int
+	group       model.EventGroup
+	cursor      int
+	width       int
+	height      int
+	showModal   bool
+	modalCursor int
 }
 
 func NewDetailModel(group model.EventGroup) DetailModel {
@@ -64,6 +76,31 @@ func (m DetailModel) Update(msg tea.Msg) (DetailModel, tea.Cmd) {
 		}
 
 	case tea.KeyMsg:
+		if m.showModal {
+			switch msg.String() {
+			case "up", "k":
+				if m.modalCursor > 0 {
+					m.modalCursor--
+				}
+			case "down", "j":
+				if m.modalCursor < modalOptCount-1 {
+					m.modalCursor++
+				}
+			case "enter":
+				inst := m.group.Instances[m.cursor]
+				m.showModal = false
+				switch m.modalCursor {
+				case modalOptOpenWeb:
+					return m, openURL(inst.URL)
+				case modalOptGCal:
+					return m, openURL(googleCalendarURL(inst))
+				}
+			case "esc":
+				m.showModal = false
+			}
+			return m, nil
+		}
+
 		switch msg.String() {
 		case "up", "k":
 			if m.cursor > 0 {
@@ -77,8 +114,9 @@ func (m DetailModel) Update(msg tea.Msg) (DetailModel, tea.Cmd) {
 			}
 		case "enter":
 			if len(m.group.Instances) > 0 {
-				url := m.group.Instances[m.cursor].URL
-				return m, openURL(url)
+				m.showModal = true
+				m.modalCursor = 0
+				return m, nil
 			}
 		case "esc":
 			return m, func() tea.Msg { return NavigateBackMsg{} }
@@ -145,10 +183,46 @@ func (m DetailModel) View() string {
 	}
 
 	sb.WriteString("\n  " + divider + "\n\n")
-	sb.WriteString(lipgloss.NewStyle().Faint(true).Render(
-		"  [enter] open in browser   [esc] back   [ctrl+c] quit",
-	))
+
+	if m.showModal {
+		for i, opt := range modalOptions {
+			if i == m.modalCursor {
+				sb.WriteString(selectedInstStyle.Render("  " + cursorChar + " " + opt))
+			} else {
+				sb.WriteString("    " + opt)
+			}
+			sb.WriteString("\n")
+		}
+		sb.WriteString("\n")
+		sb.WriteString(lipgloss.NewStyle().Faint(true).Render(
+			"  [enter] select   [esc] cancel",
+		))
+	} else {
+		sb.WriteString(lipgloss.NewStyle().Faint(true).Render(
+			"  [enter] open   [esc] back   [ctrl+c] quit",
+		))
+	}
 	return sb.String()
+}
+
+func googleCalendarURL(inst model.EventInstance) string {
+	const layout = "20060102T150405"
+	start := inst.Date.Format(layout)
+	end := inst.EndTime.Format(layout)
+	if inst.EndTime.IsZero() {
+		end = inst.Date.Add(time.Hour).Format(layout)
+	}
+	params := url.Values{}
+	params.Set("action", "TEMPLATE")
+	params.Set("text", inst.Name)
+	params.Set("dates", start+"/"+end)
+	if inst.Location != "" {
+		params.Set("location", inst.Location)
+	}
+	if inst.Description != nil && *inst.Description != "" {
+		params.Set("details", *inst.Description)
+	}
+	return "https://calendar.google.com/calendar/render?" + params.Encode()
 }
 
 // openURL opens the URL in the default browser and returns a no-op command.
