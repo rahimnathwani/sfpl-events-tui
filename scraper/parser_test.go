@@ -68,6 +68,33 @@ func TestParseDateRange_parsesStartAndEnd(t *testing.T) {
 	}
 }
 
+func TestParseDateRange_afternoonEventsCorrectlyAsPM(t *testing.T) {
+	tests := []struct {
+		input      string
+		wantStartH int
+		wantEndH   int
+	}{
+		{"Saturday, 5/30/2026, 1:00 - 2:00", 13, 14},   // 1 PM – 2 PM
+		{"Sunday, 5/31/2026, 2:00 - 3:30", 14, 15},      // 2 PM – 3:30 PM
+		{"Thursday, 6/4/2026, 4:00 - 6:00", 16, 18},     // 4 PM – 6 PM
+		{"Thursday, 6/11/2026, 5:30 - 6:30", 17, 18},    // 5:30 PM – 6:30 PM
+		{"Saturday, 6/27/2026, 12:00 - 1:00", 12, 13},   // noon – 1 PM
+	}
+	for _, tt := range tests {
+		start, end, err := parseDateRange(tt.input)
+		if err != nil {
+			t.Errorf("parseDateRange(%q) error: %v", tt.input, err)
+			continue
+		}
+		if start.Hour() != tt.wantStartH {
+			t.Errorf("parseDateRange(%q) start hour = %d, want %d", tt.input, start.Hour(), tt.wantStartH)
+		}
+		if end.Hour() != tt.wantEndH {
+			t.Errorf("parseDateRange(%q) end hour = %d, want %d", tt.input, end.Hour(), tt.wantEndH)
+		}
+	}
+}
+
 func TestParseDescription_extractsBodyText(t *testing.T) {
 	html := `<html><body>
 		<div class="event__content clearfix"><p>Join us for chess!</p></div>

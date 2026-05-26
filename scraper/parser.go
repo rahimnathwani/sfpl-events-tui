@@ -119,6 +119,10 @@ func extractInstance(article *html.Node) *model.EventInstance {
 }
 
 // parseDateRange parses "Wednesday, 5/13/2026, 10:00 - 11:00" into start and end times.
+//
+// SFPL's HTML uses a bare 12-hour clock with no AM/PM marker. Hours 1–8 are
+// unambiguously PM for library events (branches don't run programs at 1–8 AM),
+// so we add 12 hours to any parsed hour in that range.
 func parseDateRange(s string) (start, end time.Time, err error) {
 	parts := strings.SplitN(s, ", ", 3)
 	if len(parts) < 3 {
@@ -132,10 +136,22 @@ func parseDateRange(s string) (start, end time.Time, err error) {
 	if err != nil {
 		return
 	}
+	start = fixPMHour(start)
 	if len(timeParts) == 2 {
 		end, _ = time.ParseInLocation("1/2/2006 15:04", dateStr+" "+strings.TrimSpace(timeParts[1]), time.Local)
+		end = fixPMHour(end)
 	}
 	return
+}
+
+// fixPMHour adds 12 hours to times whose hour falls in 1–8, correcting the
+// ambiguity introduced by SFPL's bare 12-hour clock display.
+func fixPMHour(t time.Time) time.Time {
+	h := t.Hour()
+	if h >= 1 && h <= 8 {
+		return t.Add(12 * time.Hour)
+	}
+	return t
 }
 
 // --- HTML helpers ---
